@@ -7,6 +7,7 @@ import ru.job4j.articles.model.Word;
 import ru.job4j.articles.service.generator.ArticleGenerator;
 import ru.job4j.articles.store.Store;
 
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -22,12 +23,20 @@ public class SimpleArticleService implements ArticleService {
 
     @Override
     public void generate(Store<Word> wordStore, int count, Store<Article> articleStore) {
-        LOGGER.info("Геренация статей в количестве {}", count);
+        LOGGER.info("Генерация статей в количестве {}", count);
         var words = wordStore.findAll();
-        var articles = IntStream.iterate(0, i -> i < count, i -> i + 1)
+        while (count > 0) {
+            List<Article> articles = generateArticles(count / 100 > 0 ? 100 : count, words);
+            articles.forEach(articleStore::save);
+            count -= 100;
+            articles = null;
+        }
+    }
+
+    private List<Article> generateArticles(int count, List<Word> words) {
+        return IntStream.iterate(0, i -> i < count, i -> i + 1)
                 .peek(i -> LOGGER.info("Сгенерирована статья № {}", i))
                 .mapToObj((x) -> articleGenerator.generate(words))
                 .collect(Collectors.toList());
-        articles.forEach(articleStore::save);
     }
 }
