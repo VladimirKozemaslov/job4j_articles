@@ -25,18 +25,9 @@ public class SimpleArticleService implements ArticleService {
     public void generate(Store<Word> wordStore, int count, Store<Article> articleStore) {
         LOGGER.info("Генерация статей в количестве {}", count);
         var words = wordStore.findAll();
-        while (count > 0) {
-            List<Article> articles = generateArticles(count / 100 > 0 ? 100 : count, words);
-            articles.forEach(articleStore::save);
-            count -= 100;
-            articles = null;
-        }
-    }
-
-    private List<Article> generateArticles(int count, List<Word> words) {
-        return IntStream.iterate(0, i -> i < count, i -> i + 1)
+        IntStream.iterate(0, i -> i < count, i -> i + 1)
                 .peek(i -> LOGGER.info("Сгенерирована статья № {}", i))
                 .mapToObj((x) -> articleGenerator.generate(words))
-                .collect(Collectors.toList());
+                .forEach(articleStore::save);
     }
 }
